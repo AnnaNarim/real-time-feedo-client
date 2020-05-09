@@ -9,7 +9,7 @@ import ApolloClient from 'apollo-boost'
 import App from "./components/App/App"
 
 const client = new ApolloClient({
-  uri     : 'http://localhost:4000',
+  uri     : 'https://real-time-feedo-server.herokuapp.com/',
   request : (operation) => {
     const token = localStorage.getItem(AUTH_TOKEN);
     operation.setContext({headers : {Authorization : token ? `Bearer ${token}` : '',}})
