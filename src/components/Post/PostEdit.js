@@ -73,7 +73,7 @@ const EditPostConfirmDialog = ({title : PropsTitle, content : PropsContent, onCo
     const [validInfo, setValidInfo] = useState(VALIDATION_INITIAL_STATE);
 
     const {title, content} = info,
-        {isValid, errorMsgs = {}} = validInfo;
+        {errorMsgs = {}} = validInfo;
 
     useEffect(() => {
         if(!validInfo.isValid) {
@@ -103,7 +103,7 @@ const EditPostConfirmDialog = ({title : PropsTitle, content : PropsContent, onCo
             maxWidth="xs"
             open={open}
         >
-            <DialogTitle id="confirmation-dialog-title">Post Edit</DialogTitle>
+            <DialogTitle id="confirmation-dialog-title">Edit</DialogTitle>
             <DialogContent dividers>
                 <TextField
                     autoFocus

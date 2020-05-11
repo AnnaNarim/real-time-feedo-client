@@ -7,8 +7,6 @@ import {SIGN_IN, SIGN_UP} from "../../constant";
 import {isAuthenticated} from "../../lib/jsUtils";
 import Typography from "@material-ui/core/Typography";
 import Box from "@material-ui/core/Box";
-// import AuthenticatedNavBar from "./AuthenticatedNavBar";
-// import NonAuthenticatedNavBar from "./NonAuthenticatedNavBar";
 import Logo from "../../assets/logo.png";
 import AuthenticatedNavBar from "./AuthenticatedNavBar";
 import NonAuthenticatedNavBar from "./NonAuthenticatedNavBar";
@@ -43,7 +41,7 @@ const useStyles = makeStyles(theme => ({
 
 
 const Header = (props) => {
-    const {location, verify} = props;
+    const {location} = props;
     const classes = useStyles();
     const isLoginOrSignUpPage = location.pathname.includes(SIGN_UP) || location.pathname.includes(SIGN_IN);
 

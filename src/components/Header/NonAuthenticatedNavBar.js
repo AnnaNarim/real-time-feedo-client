@@ -1,10 +1,13 @@
 import React from 'react';
 import {Link} from "react-router-dom";
 import Button from "@material-ui/core/Button";
-import {BLOG, DRAFTS, SIGN_IN, SIGN_UP} from "../../constant";
+import {ROOM, BLOG, SIGN_IN, SIGN_UP} from "../../constant";
 
 const NonAuthenticatedNavBar = () => {
     return <div>
+        <Button component={Link} to={ROOM}>
+            Enter Room
+        </Button>
         <Button component={Link} to={BLOG}>
             Blog
         </Button>

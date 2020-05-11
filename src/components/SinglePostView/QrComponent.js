@@ -1,4 +1,4 @@
-import React, {Fragment, useLayoutEffect, useState} from 'react'
+import React, {Fragment, useEffect, useLayoutEffect, useState} from 'react'
 import {makeStyles} from "@material-ui/core/styles";
 import {withRouter} from "react-router-dom";
 import TextField from "@material-ui/core/TextField";
@@ -21,6 +21,32 @@ const CREATE_CLASS_MUTATION = gql`
     }
 `;
 
+
+const useStyles = makeStyles((theme) => ({
+    backdrop : {
+        zIndex : theme.zIndex.drawer + 1,
+        margin : "0 !important"
+    },
+    appBar   : {
+        position : 'relative',
+    },
+    title    : {
+        marginLeft : theme.spacing(2),
+        flex       : 1,
+    },
+    root     : {
+        display                        : "grid",
+        gridTemplateColumns            : "1fr 1fr",
+        gridGap                        : '1em',
+        height                         : "100%",
+        [theme.breakpoints.down('sm')] : {
+            gridTemplateColumns : 'auto',
+            gridTemplateRows    : "1fr 1fr",
+        }
+    }
+
+}));
+
 function useWindowSize() {
     const [size, setSize] = useState([0, 0]);
     useLayoutEffect(() => {
@@ -35,11 +61,17 @@ function useWindowSize() {
     return size;
 }
 
-const QrComponent = ({postId}) => {
+const QrComponent = ({postId, selectedClassId, refresh}) => {
     const classes = useStyles();
     const [className, setClassName] = useState('');
     const [keyValue, setKeyValue] = useState('');
     const [createClass, {loading}] = useMutation(CREATE_CLASS_MUTATION);
+
+
+    useEffect(() => {
+        setKeyValue(selectedClassId)
+    }, [selectedClassId]);
+
 
     const QRvalue = DOMAIN + keyValue;
 
@@ -48,12 +80,7 @@ const QrComponent = ({postId}) => {
             <Backdrop className={classes.backdrop} open={loading}>
                 <CircularProgress color="inherit"/>
             </Backdrop>
-            <div style={{
-                display             : "grid",
-                gridTemplateColumns : "1fr 1fr",
-                gridGap             : '1em',
-                height              : "100%"
-            }}>
+            <div className={classes.root}>
 
                 <div style={{display : "grid", gridTemplateRows : "1fr 1fr", gridGap : '1em'}}>
                     <TextField
@@ -61,6 +88,7 @@ const QrComponent = ({postId}) => {
                         value={className}
                         onChange={(e) => setClassName(e.target.value)}
                     />
+
                     <Button
                         disabled={!className}
                         style={{margin : "15px 0"}}
@@ -71,10 +99,9 @@ const QrComponent = ({postId}) => {
                                 name : className,
                                 postId
                             }
-                        }).then(({data}) => setKeyValue(data.createClass.id))}>
+                        }).then(({data}) => setKeyValue(data.createClass.id)).then(() => refresh())}>
                         Generate QR and Key
                     </Button>
-
                     <FullScreenDialog
                         keyValue={keyValue}
                         renderQr={(size) => <QRCode value={QRvalue} size={size} level={'H'}/>}/>
@@ -100,28 +127,14 @@ const QrComponent = ({postId}) => {
 export default withRouter(QrComponent);
 
 
-const useStyles = makeStyles((theme) => ({
-    backdrop : {
-        zIndex : theme.zIndex.drawer + 1,
-        margin : "0 !important"
-    },
-    appBar   : {
-        position : 'relative',
-    },
-    title    : {
-        marginLeft : theme.spacing(2),
-        flex       : 1,
-    },
-}));
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
 });
 
 function FullScreenDialog({renderQr, keyValue}) {
-    const classes = useStyles();
     const [open, setOpen] = React.useState(false);
-    const [width, height] = useWindowSize();
+    const [width] = useWindowSize();
     const handleClickOpen = () => {
         setOpen(true);
     };
