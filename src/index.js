@@ -34,6 +34,7 @@ const wsLink = new WebSocketLink({
   uri     : `ws://real-time-feedo-server.herokuapp.com/`,
   options : {
     reconnect        : true,
+    transports: [ 'websocket' ],
     connectionParams : {
       Authorization : `Bearer ${localStorage.getItem(AUTH_TOKEN)}`,
     },
