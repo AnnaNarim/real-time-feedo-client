@@ -70,7 +70,7 @@ const DeletePostConfirmDialog = ({title, onConfirm, onClose}) => {
             maxWidth="xs"
             open={open}
         >
-            <DialogTitle id="confirmation-dialog-title">Log Out Confirmation</DialogTitle>
+            <DialogTitle id="confirmation-dialog-title">Delete Room confirmation</DialogTitle>
             <DialogContent dividers>
                 Are you sure you want delete {title} post? &#128561;
             </DialogContent>

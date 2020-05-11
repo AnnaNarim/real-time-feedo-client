@@ -1,4 +1,4 @@
-import React, {Fragment} from 'react'
+import React, {Fragment, useState} from 'react'
 import {gql} from 'apollo-boost'
 import {useQuery} from "@apollo/react-hooks";
 import Backdrop from "@material-ui/core/Backdrop";
@@ -6,16 +6,15 @@ import CircularProgress from "@material-ui/core/CircularProgress";
 import {makeStyles} from "@material-ui/core/styles";
 import {Redirect, withRouter} from "react-router-dom";
 import DeletePost from "../Post/PostDelete";
-import PublishPost from "../Post/PostPublish";
 import UpdatePost from "../Post/PostEdit";
 import {Paper} from "@material-ui/core";
-import Grid from "@material-ui/core/Grid";
 import QrComponent from "./QrComponent";
-import ChartsComponent from "./ChartsComponent";
-import {DRAFTS} from "../../constant";
+import {ROOMS} from "../../constant";
 import TextField from "@material-ui/core/TextField/TextField";
 import MenuItem from "@material-ui/core/MenuItem";
 import PublishClass from "./ClassPublish";
+import Typography from "@material-ui/core/Typography";
+import CommentsPageWithData from "./ClassInfoSubscription";
 
 const POST_QUERY = gql`
     query PostQuery($id: ID!) {
@@ -24,6 +23,7 @@ const POST_QUERY = gql`
             title
             content
             published
+            anonymous
             author {
                 name
             }
@@ -38,29 +38,45 @@ const POST_QUERY = gql`
 
 
 const useStyles = makeStyles((theme) => ({
-    backdrop      : {
+    backdrop           : {
         zIndex : theme.zIndex.drawer + 1
     },
-    root          : {
-        height  : '100%',
-        padding : theme.spacing(2),
+    root               : {
+        height           : '100%',
+        display          : "grid",
+        gridTemplateRows : "auto 1fr",
+        gridGap          : "2em",
+        padding          : "2em"
     },
-    paper         : {
+    topSectionsWrapper : {
+        display                        : "grid",
+        gridTemplateColumns            : "1fr 1fr",
+        gridGap                        : "2em",
+        [theme.breakpoints.down('sm')] : {
+            gridTemplateColumns : 'auto',
+            gridTemplateRows    : "auto auto",
+        },
+    },
+    paper              : {
         padding : theme.spacing(2),
         height  : "100%",
         color   : theme.palette.text.secondary,
     },
-    item          : {
+    item               : {
         padding : 10
     },
-    selectionRoot : {
-        '& .MuiTextField-root': {
+    selectionRoot      : {
+        '& .MuiSelect-select' : {
             display             : "grid",
             gridTemplateColumns : "1fr auto",
             gridGap             : "1em"
         },
+    },
+    sectionPlaceholder : {
+        display    : "grid",
+        alignItems : 'center',
+        height     : "100%"
     }
-
 }));
 
 
@@ -79,6 +95,7 @@ const SinglePostView = (props) => {
         options   : {fetchPolicy : 'network-only'}
     });
 
+    const [selectedClassId, setSelectedClassId] = useState('');
     const refresh = () => refetch();
 
     const {post = {}} = data;
@@ -87,18 +104,18 @@ const SinglePostView = (props) => {
         return <Redirect to={'/'}/>;
 
 
-    const {title, content, published, classes : postClasses = []} = post;
+    const {title, content, anonymous, classes : postClasses = []} = post;
 
     return (
         <Fragment>
             <Backdrop className={classes.backdrop} open={loading}>
                 <CircularProgress color="inherit"/>
             </Backdrop>
-            <Grid className={classes.root}
-                container
-                alignItems="stretch"
-            >
-                <Grid item xs={12} sm={6} className={classes.item}>
+
+            <div className={classes.root}>
+                <div className={classes.topSectionsWrapper}>
+
+
                     <Paper className={classes.paper} elevation={6}>
                         <fieldset>
                             <legend>Title</legend>
@@ -110,13 +127,21 @@ const SinglePostView = (props) => {
                             {content}
                         </fieldset>
 
-                        <div style={{display : "flex", paddingTop : 10}}>
-                            <PublishPost id={id} isPublished={!!published} refresh={refresh}/>
-                            <DeletePost title={title} id={id} refresh={() => history.push({
-                                pathname : DRAFTS,
-                                state    : {shouldRefetch : true}
-                            })}/>
-                            <UpdatePost title={title} id={id} content={content} refresh={() => refresh()}/>
+                        <div style={{
+                            display        : "flex",
+                            flexDirection  : "row",
+                            justifyContent : 'space-between',
+                            alignItems     : "center"
+                        }}>
+                            <Typography color='textSecondary'>Answers are {!anonymous ? "not" : ''} anonymous</Typography>
+                            {/*<PublishPost id={id} isPublished={!!published} refresh={refresh}/>*/}
+                            <div>
+                                <DeletePost title={title} id={id} refresh={() => history.push({
+                                    pathname : ROOMS,
+                                    state    : {shouldRefetch : true}
+                                })}/>
+                                <UpdatePost title={title} id={id} content={content} refresh={() => refresh()}/>
+                            </div>
                         </div>
 
 
@@ -125,13 +150,10 @@ const SinglePostView = (props) => {
                                 select
                                 fullWidth
                                 label="Select class"
-                                // value={answerType}
+                                value={selectedClassId}
                                 name='answerType'
-                                classes={{
-                                    root : classes.selectionRoot
-                                }}
-
-                                // onChange={({target}) => setInfo({...info, [target.name] : target.value})}
+                                classes={{root : classes.selectionRoot}}
+                                onChange={({target}) => setSelectedClassId(target.value)}
                                 variant="outlined"
                                 helperText="Please select class to see the answers statistic"
                             >
@@ -148,18 +170,23 @@ const SinglePostView = (props) => {
 
                             : null}
                     </Paper>
-                </Grid>
-                <Grid item xs={12} sm={6} className={classes.item}>
+
                     <Paper elevation={6} className={classes.paper}>
-                        <QrComponent postId={id}/>
+                        <QrComponent postId={id} selectedClassId={selectedClassId} refresh={() => refresh()}/>
                     </Paper>
-                </Grid>
-                <Grid item xs={12} className={classes.item}>
+
+
+                </div>
+                <div>
                     <Paper elevation={6} className={classes.paper}>
-                        <ChartsComponent/>
+                        {selectedClassId ? <CommentsPageWithData selectedClassId={selectedClassId}/> :
+                            <div className={classes.sectionPlaceholder}>
+                                <Typography variant='h2' align='center'>Please select class</Typography>
+                            </div>
+                        }
                     </Paper>
-                </Grid>
-            </Grid>
+                </div>
+            </div>
         </Fragment>
     )
 };

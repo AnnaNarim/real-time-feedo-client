@@ -1,18 +1,19 @@
 import {gql} from "apollo-boost";
-import React, {useEffect, useState} from "react";
+import React, {useState} from "react";
 import {useMutation} from "@apollo/react-hooks";
 import {makeStyles} from "@material-ui/core/styles";
-import {DRAFTS} from "../../constant";
+import {ROOMS} from "../../constant";
 import {Redirect} from "react-router-dom";
 import Container from "@material-ui/core/Container";
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
 import MenuItem from "@material-ui/core/MenuItem";
-import {clone} from "../../lib/jsUtils";
+import {findFirst} from "../../lib/jsUtils";
 import IconButton from "@material-ui/core/IconButton";
 import DeleteIcon from '@material-ui/icons/Delete';
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Checkbox from "@material-ui/core/Checkbox";
+import {Controller, useFieldArray, useForm} from "react-hook-form";
 
 const CREATE_DRAFT_MUTATION = gql`
     mutation CreateDraftMutation($title: String!,$anonymous:Boolean!, $content: String!, $answerType:String!, $fields:[inputField!]! ) {
@@ -24,7 +25,6 @@ const CREATE_DRAFT_MUTATION = gql`
         }
     }
 `;
-
 
 const useStyles = makeStyles((theme) => ({
     submitBtn          : {},
@@ -50,135 +50,100 @@ const useStyles = makeStyles((theme) => ({
     }
 }));
 
-const INITIAL_STATE = {
-    title      : "",
-    content    : '',
-    anonymous  : true,
-    answerType : 'percentageAndText',
-    fields     : []
-};
-
-const VALIDATION_INITIAL_STATE = {isValid : true, errorMsgs : {}};
-
-const validateForm = (info) => {
-    const errorMsgs = {};
-    if(!info.title) {
-        errorMsgs.title = 'Title is required field'
-    }
-
-    if(!info.content) {
-        errorMsgs.content = 'Content is required field'
-    }
-
-    if(!info.fields.length) {
-        errorMsgs.fields = 'At least one field is required'
-    }
-
-    return {isValid : !Object.keys(errorMsgs).length, errorMsgs}
-};
 
 const CreatePost = (props) => {
     const classes = useStyles();
-    const [info, setInfo] = useState(INITIAL_STATE);
-    const [validInfo, setValidInfo] = useState(VALIDATION_INITIAL_STATE);
 
     const [redirectToReferrer, setRedirectToReferrer] = useState(false);
     const [createDraft] = useMutation(CREATE_DRAFT_MUTATION);
 
-    const answerTypeOptions = [
-        {value : 'percentage', label : 'Percentage'},
-        {value : 'text', label : 'Text'},
-        {value : 'percentageAndText', label : 'Percentage and Text'}
-    ];
-
-    const {title, content, answerType, fields, anonymous} = info,
-        {isValid, errorMsgs = {}} = validInfo;
-
-    useEffect(() => {
-        if(!validInfo.isValid) {
-            setValidInfo(VALIDATION_INITIAL_STATE)
-        }
-    }, [info]);
+    const {control, reset, handleSubmit, watch, errors} = useForm();
+    const {fields, append, remove} = useFieldArray({control, name : "fields"});
 
     if(redirectToReferrer) {
         return <Redirect to={{
-            pathname : DRAFTS,
+            pathname : ROOMS,
             state    : {shouldRefetch : true}
         }}/>
     }
 
+    const onSubmit = (data) => {
+        createDraft({variables : {...data}}).then(() => {
+            setRedirectToReferrer(true);
+            reset();
+        });
+    };
+
+    const generalAnswerType = watch("answerType");
 
     return <Container fixed>
-        <h1>Create Draft</h1>
-        <form onSubmit={(e) => {
-            e.preventDefault();
-            const newValidInfo = validateForm(info);
-            if(newValidInfo.isValid === true) {
-                createDraft({variables : {...info}}).then(() => {
-                    setRedirectToReferrer(true);
-                    setInfo(INITIAL_STATE)
-                });
-            } else {
-                setValidInfo(newValidInfo)
-            }
-        }}>
-            <TextField
+        <h1>Create Room</h1>
+        <form onSubmit={handleSubmit(onSubmit)}>
+            <Controller
                 autoFocus
                 label="Title"
                 placeholder="Title"
-                error={Boolean(errorMsgs.title)}
-                helperText={Boolean(errorMsgs.title) ? errorMsgs.title : ''}
                 fullWidth
-                margin="normal"
+                margin='normal'
                 variant="outlined"
-                type="content"
-                value={title}
+                as={TextField}
+                rules={{required : true}}
+                error={!!errors.title}
+                helperText={!!errors.title ? "This field is required" : ''}
                 name='title'
-                onChange={({target}) => setInfo({...info, [target.name] : target.value})}
+                defaultValue={''}
+                control={control}
             />
-            <TextField
+
+            <Controller
                 label="Content"
+                placeholder="Content"
+                fullWidth
+                margin='normal'
+                variant="outlined"
                 multiline
                 rows={5}
                 rowsMax={10}
-                placeholder="Content"
-                error={Boolean(errorMsgs.content)}
-                helperText={Boolean(errorMsgs.content) ? errorMsgs.content : ''}
-                fullWidth
-                margin="normal"
-                variant="outlined"
-                type="content"
-                value={content}
+                as={TextField}
+                rules={{required : true}}
+                error={!!errors.content}
+                helperText={!!errors.content ? "This field is required" : ''}
                 name='content'
-                onChange={({target}) => setInfo({...info, [target.name] : target.value})}
+                defaultValue={''}
+                control={control}
             />
 
             <div className={classes.answerTypesWrapper}>
-                <TextField
-                    disabled={fields.length}
-                    className={classes.selection}
-                    select
-                    fullWidth
+                <Controller
                     label="Select type of the answer"
-                    value={answerType}
+                    disabled={Boolean(fields.length)}
+                    className={classes.selection}
+                    margin='normal'
+                    variant='outlined'
+                    as={TextField}
+                    select
+                    control={control}
+                    onChange={([selected]) => {
+                        append({label : "", type : selected.target.value});
+                        return selected
+                    }}
+                    rules={{required : true}}
                     name='answerType'
-                    onChange={({target}) => setInfo({...info, [target.name] : target.value})}
-                    variant="outlined"
-                    helperText="Please select preferred type of answers"
+                    error={!!errors.answerType}
+                    helperText={!!errors.answerType ? "This field is required" : 'Please select preferred type of answers'}
+                    fullWidth
+                    defaultValue={''}
                 >
-                    {answerTypeOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>))}
-                </TextField>
+                    <MenuItem value=""><em>None</em></MenuItem>
+                    <MenuItem value={"text"}>Text</MenuItem>
+                    <MenuItem value={"percentage"}>Percentage</MenuItem>
+                    <MenuItem value={"percentageAndText"}>Text and Percentage</MenuItem>
+                </Controller>
 
 
                 <div>
-                    <Button
-                        color='primary'
-                        variant="contained"
-                        onClick={() => setInfo({
-                            ...info,
-                            fields : fields.concat([{type : answerType, label : ''}])
-                        })}
+                    <Button disabled={!Boolean(generalAnswerType)} color='primary' variant="contained"
+                        onClick={() => append({label : "", type : generalAnswerType})}
                     >
                         Add Field
                     </Button>
@@ -187,76 +152,89 @@ const CreatePost = (props) => {
 
 
             <div className={classes.fieldsContainer}>
-                {fields.map((field, index) => {
-                    return <div key={index} className={classes.fieldWrapper}>
-                        <TextField
-                            style={{flex : 1}}
-                            placeholder="Question Label"
-                            variant="outlined"
-                            value={field.label}
-                            name='content'
-                            onChange={({target}) => {
-                                const updatedField = {...field, label : target.value};
-                                const updatedFields = clone(fields);
-                                updatedFields[index] = updatedField;
+                {fields.map((locationInput, index) => {
+                    const type = locationInput.type;
+                    const labelName = `fields[${index}].label`;
+                    const typeName = `fields[${index}].type`;
 
-                                setInfo({...info, fields : updatedFields})
-                            }}
-                        />
+                    const hasFieldError = !!(errors.fields && errors.fields.length);
 
-                        {answerType === "percentageAndText" ?
-                            <TextField
-                                style={{minWidth : 220}}
-                                select
-                                label="Select type answer type"
-                                value={field.type}
-                                onChange={({target}) => {
-                                    const updatedField = {...field, type : target.value};
-                                    const updatedFields = clone(fields);
-                                    updatedFields[index] = updatedField;
+                    const isErrorLabel = hasFieldError ? Boolean(findFirst(errors.fields, {name : labelName})) : false;
+                    const isErrorType = hasFieldError ? Boolean(findFirst(errors.fields, {name : typeName})) : false;
 
-                                    setInfo({...info, fields : updatedFields})
-                                }}
-                                variant="outlined"
-                            >
-                                <MenuItem value={'percentage'}>Percentage</MenuItem>
-                                <MenuItem value={'text'}>Text</MenuItem>
-                            </TextField>
-                            : null
-                        }
+                    return (
+                        <div key={index} className={classes.fieldWrapper}>
+                            <Controller
+                                style={{flex : 1}}
+                                as={TextField}
+                                control={control}
+                                name={labelName}
+                                defaultValue={locationInput.label}
+                                label="Ask a question"
+                                placeholder="Ask a question"
+                                margin='normal'
+                                variant='outlined'
+                                rules={{required : true}}
+                                error={isErrorLabel}
+                                fullWidth
+                            />
 
-                        <IconButton onClick={() => {
-                            const updatedFields = fields.filter((a, i) => i !== index);
-                            setInfo({...info, fields : updatedFields})
-                        }}>
-                            <DeleteIcon/>
-                        </IconButton>
-                    </div>
+                            {type === "percentageAndText" ?
+                                <Controller
+                                    label="Select an answer type"
+                                    style={{minWidth : 220}}
+                                    margin='normal'
+                                    variant='outlined'
+                                    as={TextField}
+                                    select
+                                    control={control}
+                                    rules={{required : true}}
+                                    name={typeName}
+                                    error={isErrorType}
+                                    defaultValue={''}
+                                >
+                                    <MenuItem value=""><em>None</em></MenuItem>
+                                    <MenuItem value={'text'}>Text</MenuItem>
+                                    <MenuItem value={'percentage'}>Percentage</MenuItem>
+                                </Controller>
+                                : <Controller
+                                    style={{display : "none"}}
+                                    as={TextField}
+                                    control={control}
+                                    name={typeName}
+                                    defaultValue={locationInput.type}
+                                    label="Ask a question"
+                                    placeholder="Ask a question"
+                                    margin='normal'
+                                    variant='outlined'
+                                    disabled={true}
+                                />
+                            }
+
+                            <IconButton disabled={fields.length === 1} onClick={() => remove(index)}>
+                                <DeleteIcon/>
+                            </IconButton>
+                        </div>
+                    );
                 })}
             </div>
 
+
             <FormControlLabel
                 control={
-                    <Checkbox
-                        checked={anonymous}
-                        onChange={({target}) => setInfo({...info, [target.name] : target.checked})}
-                        name="anonymous"
-                        color="primary"
-                    />
+                    <Controller
+                        as={Checkbox}
+                        control={control}
+                        defaultValue={true}
+                        name="anonymous" color="primary"/>
                 }
                 label="Leave answer anonymously"
             />
 
-            <Button className={classes.submitBtn}
-                color='primary'
-                variant="contained"
-                disabled={!isValid}
-                type="submit"
-            >
+            <Button className={classes.submitBtn} color='primary' variant="contained" type="submit">
                 Create
             </Button>
         </form>
     </Container>;
 };
-
 export default CreatePost;

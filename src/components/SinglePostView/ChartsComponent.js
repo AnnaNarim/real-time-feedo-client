@@ -1,118 +1,171 @@
-import React, {PureComponent} from 'react';
-import {
-    Bar,
-    BarChart,
-    CartesianGrid,
-    Cell,
-    PolarAngleAxis,
-    PolarGrid,
-    PolarRadiusAxis,
-    Radar,
-    RadarChart,
-    XAxis,
-    YAxis,
-} from 'recharts';
-import {scaleOrdinal} from 'd3-scale';
-import {schemeCategory10} from 'd3-scale-chromatic';
+import React, {Fragment, useState} from 'react';
+import ExpansionPanel from "@material-ui/core/ExpansionPanel";
+import ExpansionPanelSummary from "@material-ui/core/ExpansionPanelSummary";
+import Typography from "@material-ui/core/Typography";
+import ExpansionPanelDetails from "@material-ui/core/ExpansionPanelDetails";
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import {toArray} from "../../lib/jsUtils";
+import Divider from "@material-ui/core/Divider";
 
-const colors = scaleOrdinal(schemeCategory10).range();
+import {makeStyles} from '@material-ui/core/styles';
+import ListItemText from '@material-ui/core/ListItemText';
+import ListItem from '@material-ui/core/ListItem';
+import Button from "@material-ui/core/Button";
+import Slide from "@material-ui/core/Slide";
+import Dialog from "@material-ui/core/Dialog";
+import AppBar from "@material-ui/core/AppBar";
+import Toolbar from "@material-ui/core/Toolbar";
+import IconButton from "@material-ui/core/IconButton";
+import List from "@material-ui/core/List";
+import CloseIcon from '@material-ui/icons/Close';
+import PercentageChart from "./PercentageChart";
+import moment from 'moment';
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import Switch from "@material-ui/core/Switch";
 
+const useStyles = makeStyles((theme) => ({
+    appBar : {
+        position : 'relative',
+    },
+    title  : {
+        marginLeft : theme.spacing(2),
+        flex       : 1,
+    },
+}));
 
-const data = [
-    {
-        subject : 'Math', A : 120, B : 110, fullMark : 150,
-    },
-    {
-        subject : 'Chinese', A : 98, B : 130, fullMark : 150,
-    },
-    {
-        subject : 'English', A : 86, B : 130, fullMark : 150,
-    },
-    {
-        subject : 'Geography', A : 99, B : 100, fullMark : 150,
-    },
-    {
-        subject : 'Physics', A : 85, B : 90, fullMark : 150,
-    },
-    {
-        subject : 'History', A : 65, B : 85, fullMark : 150,
-    },
-];
+const renderTextTypeAnswers = (fields, showNames) => {
+    return <div>
+        {fields.map(field => {
+            const answers = toArray(field.relativeClassAnswers);
 
+            return <ExpansionPanel key={field.id}>
+                <ExpansionPanelSummary expandIcon={<ExpandMoreIcon/>}>
+                    <Typography>{field.label}</Typography>
+                </ExpansionPanelSummary>
+                <ExpansionPanelDetails style={{display : "block"}}>
+                    {
+                        answers.map(answer => {
+                            return <div key={answer.id} style={{width : '100%', margin : "10px 0"}}>
+                                <Typography color='textSecondary'>{answer.value} {
+                                    showNames ? `- ${answer.author.name}` : ''
+                                }</Typography>
 
-const data2 = [
-    {
-        name : 'Page A', uv : 4000, female : 2400, male : 2400,
-    },
-    {
-        name : 'Page B', uv : 3000, female : 1398, male : 2210,
-    },
-    {
-        name : 'Page C', uv : 2000, female : 9800, male : 2290,
-    },
-    {
-        name : 'Page D', uv : 2780, female : 3908, male : 2000,
-    },
-    {
-        name : 'Page E', uv : 1890, female : 4800, male : 2181,
-    },
-    {
-        name : 'Page F', uv : 2390, female : 3800, male : 2500,
-    },
-    {
-        name : 'Page G', uv : 3490, female : 4300, male : 2100,
-    },
-];
-
-const getPath = (x, y, width, height) => `M${x},${y + height}
-          C${x + width / 3},${y + height} ${x + width / 2},${y + height / 3} ${x + width / 2}, ${y}
-          C${x + width / 2},${y + height / 3} ${x + 2 * width / 3},${y + height} ${x + width}, ${y + height}
-          Z`;
-
-const TriangleBar = (props) => {
-    const {
-        fill, x, y, width, height,
-    } = props;
-
-    return <path d={getPath(x, y, width, height)} stroke="none" fill={fill}/>;
+                                <Divider/>
+                            </div>
+                        })
+                    }
+                </ExpansionPanelDetails>
+            </ExpansionPanel>
+        })}
+    </div>
 };
 
-export default class ChartsComponent extends PureComponent {
+const renderPercentageTypeAnswers = (fields, submittedFormsCount) => {
+    return <PercentageChart fields={fields} submittedFormsCount={submittedFormsCount}/>
+};
 
-    render() {
-        return <div style={{
-            display             : "grid",
-            gridTemplateColumns : "1fr 1fr",
-            alignItems          : "center",
-            justifyItems        : "center"
-        }}>
-            <BarChart
-                width={500}
-                height={400}
-                data={data2}
-                margin={{
-                    top : 20, right : 30, left : 20, bottom : 5,
-                }}
-            >
-                <CartesianGrid strokeDasharray="3 3"/>
-                <XAxis dataKey="name"/>
-                <YAxis/>
-                <Bar dataKey="female" fill="#8884d8" shape={<TriangleBar/>} label={{position : 'top'}}>
+const renderMixedTypeAnswers = (fields, {submittedFormsCount, showNames}) => {
+    const fieldsByType = fields.reduce((accum, field) => {
+        const fieldType = field.type;
+
+        if(!accum[fieldType])
+            accum[fieldType] = [];
+
+        accum[fieldType].push(field);
+
+        return accum
+    }, {});
+
+    return <div style={{display : "grid", gridTemplateColumns : "1fr 1fr", gridGap : "1em"}}>
+        {renderTextTypeAnswers(fieldsByType.text, showNames)}
+        {renderPercentageTypeAnswers(fieldsByType.percentage, submittedFormsCount)}
+    </div>;
+};
+
+const ChartsComponent = ({data}) => {
+
+    const [showNames, setShowNames] = useState(false);
+
+    const {class : classInfo = {}} = data,
+        {post, attendees = []} = classInfo,
+        {answerType, anonymous, fields} = post;
+
+    const submittedFormsCount = attendees.length;
+
+    if(!post)
+        return null;
+
+    return <Fragment>
+        {!anonymous ? <div style={{margin : 10}}>
+            <ShowAttendeesList attendees={attendees}/>
+            <FormControlLabel
+                style={{marginLeft : 20}}
+                control={
+                    <Switch
+                        checked={showNames}
+                        color="primary"
+                        onChange={(e) => setShowNames(e.target.checked)}
+                    />
+                }
+                label={"Show answers with attendees` names"}
+            />
+        </div> : null}
+        {
+            answerType === "text" ? renderTextTypeAnswers(fields, showNames) :
+                answerType === "percentage" ? renderPercentageTypeAnswers(fields, submittedFormsCount) :
+                    answerType === "percentageAndText" ? renderMixedTypeAnswers(fields, {
+                        submittedFormsCount,
+                        showNames
+                    }) : null
+
+        }
+    </Fragment>
+};
+
+
+export default ChartsComponent
+
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+});
+
+const ShowAttendeesList = ({attendees}) => {
+    const classes = useStyles();
+    const [open, setOpen] = useState(false);
+
+    const handleClickOpen = () => setOpen(true);
+    const handleClose = () => setOpen(false);
+
+    return (
+        <Fragment>
+            <Button variant="outlined" color="primary" onClick={handleClickOpen}>
+                Show Attendees List
+            </Button>
+            <Dialog fullScreen open={open} onClose={handleClose} TransitionComponent={Transition}>
+                <AppBar className={classes.appBar}>
+                    <Toolbar>
+                        <IconButton edge="start" color="inherit" onClick={handleClose} aria-label="close">
+                            <CloseIcon/>
+                        </IconButton>
+                        <Typography variant="h6" className={classes.title}>
+                            Attendees List
+                        </Typography>
+                    </Toolbar>
+                </AppBar>
+                <List>
                     {
-                        data2.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={colors[index % 20]}/>
-                        ))
+                        attendees.map(attendee => {
+                            return <Fragment key={attendee.id}>
+                                <ListItem>
+                                    <ListItemText primary={attendee.name} secondary={moment(attendee.createdAt).format('MMMM Do YYYY, HH:mm:ss')}/>
+                                </ListItem>
+                                <Divider/>
+                            </Fragment>
+                        })
                     }
-                </Bar>
-            </BarChart>
-
-            <RadarChart cx={300} cy={250} width={500} height={500} data={data}>
-                <PolarGrid/>
-                <PolarAngleAxis dataKey="subject"/>
-                <PolarRadiusAxis/>
-                <Radar name="Mike" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6}/>
-            </RadarChart>
-        </div>
-    }
-}
-
+                </List>
+            </Dialog>
+        </Fragment>
+    );
+};

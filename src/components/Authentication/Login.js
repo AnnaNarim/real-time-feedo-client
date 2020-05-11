@@ -13,7 +13,7 @@ import {gql} from "apollo-boost";
 import {useMutation} from "@apollo/react-hooks";
 import {Redirect} from "react-router-dom";
 import sideImage from '../../assets/image2.jpg';
-import {SIGN_UP} from "../../constant";
+import {ROOM, ROOMS, SIGN_UP} from "../../constant";
 function Copyright() {
     return (
         <Typography variant="body2" color="textSecondary" align="center">
@@ -93,7 +93,7 @@ export default function SignInSide(props) {
     });
 
     if(redirectToReferrer) {
-        return <Redirect to={from.pathname || "/"}/>
+        return <Redirect to={from.pathname || ROOMS}/>
     }
 
     return (

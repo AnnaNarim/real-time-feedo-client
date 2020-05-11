@@ -13,7 +13,7 @@ import {gql} from "apollo-boost";
 import {useMutation} from "@apollo/react-hooks";
 import {Redirect} from "react-router-dom";
 import sideImage from '../../assets/image1.jpg';
-import {SIGN_IN} from "../../constant";
+import {ROOMS, SIGN_IN} from "../../constant";
 
 function Copyright() {
     return (
@@ -101,7 +101,7 @@ export default function SignUpSide(props) {
     });
 
     if(redirectToReferrer) {
-        return <Redirect to={from.pathname || "/"}/>
+        return <Redirect to={from.pathname || ROOMS}/>
     }
 
     const changeHandler = (e) => setInfo({...info, [e.target.name] : e.target.value});
