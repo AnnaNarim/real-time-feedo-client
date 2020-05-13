@@ -32,7 +32,7 @@ const middlewareLink = new ApolloLink((operation, forward) => {
 const httpLinkAuth = middlewareLink.concat(httpLink);
 
 const wsLink = new WebSocketLink({
-  uri     : `wss://real-time-feedo-server.herokuapp.com/socket.io/?EIO=4&transport=websocket`,
+  uri     : `wss://real-time-feedo-server.herokuapp.com`,
   options : {
     reconnect        : true,
     connectionParams : {
