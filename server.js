@@ -14,13 +14,13 @@ app.get('/ping', function (req, res) {
  return res.send('pong');
 });
 
-const wss = new Server({ server });
-wss.on('connection', (ws) => {
-  console.log('Client connected');
-  ws.on('close', () => console.log('Client disconnected'));
-});
-
 app.get('/*', function (req, res) {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 app.listen(port);
+
+const wss = new Server({ app });
+wss.on('connection', (ws) => {
+  console.log('Client connected');
+  ws.on('close', () => console.log('Client disconnected'));
+});
