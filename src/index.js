@@ -14,7 +14,7 @@ import {ApolloLink, split} from 'apollo-link'
 import {getMainDefinition} from 'apollo-utilities'
 // import WebSocket from 'ws';
 
-const httpLink = new HttpLink({uri : 'https://real-time-feedo-server.herokuapp.com/'});
+const httpLink = new HttpLink({uri : 'https://real-time-feedo-server.herokuapp.com'});
 
 const middlewareLink = new ApolloLink((operation, forward) => {
   // get the authentication token from local storage if it exists
@@ -32,7 +32,7 @@ const middlewareLink = new ApolloLink((operation, forward) => {
 const httpLinkAuth = middlewareLink.concat(httpLink);
 
 const wsLink = new WebSocketLink({
-  uri     : `wss://real-time-feedo-server.herokuapp.com/`,
+  uri     : `wss://real-time-feedo-server.herokuapp.com`,
   options : {
     reconnect        : true,
     connectionParams : {
