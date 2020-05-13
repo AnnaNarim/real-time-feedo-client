@@ -12,8 +12,9 @@ import {HttpLink, InMemoryCache, ApolloClient} from 'apollo-client-preset'
 import {WebSocketLink} from 'apollo-link-ws'
 import {ApolloLink, split} from 'apollo-link'
 import {getMainDefinition} from 'apollo-utilities'
+import WebSocket from 'ws';
 
-const httpLink = new HttpLink({uri : 'http://real-time-feedo-server.herokuapp.com/'});
+const httpLink = new HttpLink({uri : 'https://real-time-feedo-server.herokuapp.com/'});
 
 const middlewareLink = new ApolloLink((operation, forward) => {
   // get the authentication token from local storage if it exists
@@ -31,14 +32,14 @@ const middlewareLink = new ApolloLink((operation, forward) => {
 const httpLinkAuth = middlewareLink.concat(httpLink);
 
 const wsLink = new WebSocketLink({
-  uri     : `ws://real-time-feedo-server.herokuapp.com/`,
+  uri     : `wss://real-time-feedo-server.herokuapp.com`,
   options : {
     reconnect        : true,
-    transports: [ 'websocket' ],
     connectionParams : {
       Authorization : `Bearer ${localStorage.getItem(AUTH_TOKEN)}`,
     },
   },
+  webSocketImpl: WebSocket,
 });
 
 const link = split(
