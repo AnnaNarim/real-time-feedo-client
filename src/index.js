@@ -12,7 +12,9 @@ import {HttpLink, InMemoryCache, ApolloClient} from 'apollo-client-preset'
 import {WebSocketLink} from 'apollo-link-ws'
 import {ApolloLink, split} from 'apollo-link'
 import {getMainDefinition} from 'apollo-utilities'
-// import WebSocket from 'ws';
+import WebSocket from 'ws';
+
+var ws = new WebSocket('wss://real-time-feedo-server.herokuapp.com');
 
 const httpLink = new HttpLink({uri : 'https://real-time-feedo-server.herokuapp.com'});
 
@@ -39,7 +41,7 @@ const wsLink = new WebSocketLink({
       Authorization : `Bearer ${localStorage.getItem(AUTH_TOKEN)}`,
     },
   },
-  // webSocketImpl: WebSocket,
+  webSocketImpl: ws,
 });
 
 const link = split(
