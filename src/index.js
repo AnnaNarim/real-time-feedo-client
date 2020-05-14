@@ -9,9 +9,11 @@ import {getTheme} from './lib/appTheme'
 import App from "./components/App/App"
 
 import {HttpLink, InMemoryCache, ApolloClient} from 'apollo-client-preset'
-import {WebSocketLink} from 'apollo-link-ws'
+// import {WebSocketLink} from 'apollo-link-ws'
+import { WebSocketLink } from "@apollo/link-ws";
 import {ApolloLink, split} from 'apollo-link'
 import {getMainDefinition} from 'apollo-utilities'
+import {SubscriptionClient} from 'subscriptions-transport-ws'
 // import WebSocket from 'ws';
 
 // var ws = new WebSocket('wss://real-time-feedo-server.herokuapp.com');
@@ -34,16 +36,23 @@ const middlewareLink = new ApolloLink((operation, forward) => {
 // authenticated httplink
 const httpLinkAuth = middlewareLink.concat(httpLink);
 
-const wsLink = new WebSocketLink({
-  uri     : `ws://real-time-feedo-server.herokuapp.com`,
-  options : {
-    reconnect        : true,
-    connectionParams : {
-      Authorization : `Bearer ${localStorage.getItem(AUTH_TOKEN)}`,
-    },
+const _link = new SubscriptionClient(`ws://real-time-feedo-server.herokuapp.com`, {
+  reconnect: true,
+  connectionParams : {
+    Authorization : `Bearer ${localStorage.getItem(AUTH_TOKEN)}`,
   },
-  // webSocketImpl: ws,
 });
+const wsLink = new WebSocketLink(_link);
+// const wsLink = new WebSocketLink({
+//   uri     : `ws://real-time-feedo-server.herokuapp.com`,
+//   options : {
+//     reconnect        : true,
+//     connectionParams : {
+//       Authorization : `Bearer ${localStorage.getItem(AUTH_TOKEN)}`,
+//     },
+//   },
+//   // webSocketImpl: ws,
+// });
 
 const link = split(
     // split based on operation type
