@@ -23,7 +23,7 @@ const port = process.env.PORT || 8080;
 
 const server = express()
   .use((req, res) => res.sendFile(path.join(__dirname, 'build', 'index.html')))
-  .listen(PORT, () => console.log(`Listening on ${PORT}`))
+  .listen(port, () => console.log(`Listening on ${port}`))
 	.then(({ url }) => {
 	  console.log(`🚀 Server ready at ${url}`);
 	});
