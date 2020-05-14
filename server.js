@@ -23,7 +23,7 @@ const port = process.env.PORT || 8080;
 
 const server = express()
   .use((req, res) => res.sendFile(path.join(__dirname, 'build', 'index.html')))
-  .listen(PORT, () => console.log(`Listening on ${PORT}`));
+  .listen(PORT, () => console.log(`Listening on ${PORT}`))
 	.then(({ url }) => {
 	  console.log(`🚀 Server ready at ${url}`);
 	});
@@ -31,6 +31,11 @@ const server = express()
 const { Server } = require('ws');
 
 const wss = new Server({ server });
+
+wss.on('connection', (ws) => {
+  console.log('Client connected');
+  ws.on('close', () => console.log('Client disconnected'));
+});
 // const wss = new Server({ server: app });
 // wss.on('connection', (ws) => {
 //   console.log('Client connected');
